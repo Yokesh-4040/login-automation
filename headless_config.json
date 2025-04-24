@@ -1,5 +1,5 @@
 {
-    "headless": true,
+    "default_mode": "headless",
     "chrome_options": [
         "--headless",
         "--disable-gpu",

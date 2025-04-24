@@ -1,9 +1,10 @@
-selenium==4.18.1
-webdriver-manager==4.0.1
+selenium==4.15.2
+Pillow==10.1.0
+keyring==24.3.0
 requests==2.31.0
-pillow
+webdriver-manager==4.0.1
 pystray==0.19.5
 pywin32
 pyinstaller
-customtkinter==5.2.2
-keyring==24.3.0 
+customtkinter==5.2.1
+ttkbootstrap>=1.12.0
