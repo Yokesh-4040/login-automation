@@ -19,7 +19,17 @@
 - [x] Created build script with PyInstaller
 - [x] Added Chrome driver auto-download
 
+### Deployment
+- [x] Create installer package
+- [x] Set up build versioning
+- [x] Create separate build directory structure
+
 ## Pending Tasks 📝
+
+### High Priority
+- [ ] Fix user details not being saved/retrieved properly
+- [ ] Fix missing icons and logos in installed application
+- [ ] Add proper error messages for login failures
 
 ### Testing and Documentation
 - [ ] Add more comprehensive test cases
@@ -41,7 +51,6 @@
 - [ ] Add SSL certificate validation
 
 ### Deployment
-- [ ] Create installer package
 - [ ] Add auto-update mechanism
 - [ ] Create deployment documentation
 - [ ] Set up CI/CD pipeline
@@ -49,4 +58,5 @@
 ## Notes
 - The application is designed to automate the login process for Simulanis Solutions employees
 - Current focus is on improving reliability and user experience
-- Security features need to be prioritized before wide deployment 
+- Security features need to be prioritized before wide deployment
+- Build v1.0.1 is ready for testing with fixes for installation issues 

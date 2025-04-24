@@ -79,6 +79,13 @@ Edit `headless_config.json` to customize headless mode:
 
 ## Version History
 
+### v1.0.1
+- Fixed installation issues
+- Improved error handling
+- Updated installer package
+- Enhanced build process
+- Added proper branding assets
+
 ### v1.0.0
 - Initial release
 - Modern UI with customtkinter
