@@ -53,13 +53,21 @@ def build_exe():
         '--icon=icon.ico',
         '--add-data=chromedriver.exe;.',
         '--add-data=icon.ico;.',
-        '--name=AutoLogin',
+        '--name=SimulanisLogin_new',
         '--clean',
     ])
     
-    print("\nBuild complete! You can find AutoLogin.exe in the dist folder.")
+    # Try to replace the old executable with the new one
+    try:
+        if os.path.exists('dist/SimulanisLogin.exe'):
+            os.remove('dist/SimulanisLogin.exe')
+        os.rename('dist/SimulanisLogin_new.exe', 'dist/SimulanisLogin.exe')
+    except:
+        print("\nNote: Could not rename the executable. You can find it as SimulanisLogin_new.exe")
+    
+    print("\nBuild complete! You can find the executable in the dist folder.")
     print("To share with colleagues:")
-    print("1. Send them the AutoLogin.exe file")
+    print("1. Send them the executable file")
     print("2. They can double-click to run it")
     print("3. To add to startup, they can create a shortcut in their startup folder")
 

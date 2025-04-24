@@ -1,193 +1,180 @@
 import tkinter as tk
 from tkinter import ttk
-import threading
-import time
-import requests
+import customtkinter as ctk  # We'll need this package for modern UI elements
+from PIL import Image, ImageTk
+import json
+import os
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import os
-import sys
-import urllib3
-import pystray
-from PIL import Image, ImageTk
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import time
 
-def resource_path(relative_path):
-    """Get absolute path to resource, works for dev and for PyInstaller"""
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-class AutoLoginGUI:
+class ModernLoginApp(ctk.CTk):
     def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("Auto Login")
-        self.root.geometry("400x300")
-        self.root.resizable(False, False)
+        super().__init__()
         
-        # Set window icon
-        try:
-            self.root.iconbitmap(resource_path("icon.ico"))
-        except:
-            pass
+        # Configure the window
+        self.title("SystemOS Login")
+        self.geometry("400x600")
         
-        # Create system tray icon
-        self.create_tray_icon()
+        # Set the color theme
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
         
-        # Configure style
-        style = ttk.Style()
-        style.configure("Status.TLabel", padding=10)
+        # Configure grid
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
         
         # Create main frame
-        main_frame = ttk.Frame(self.root, padding="20")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.main_frame = ctk.CTkFrame(self)
+        self.main_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         
-        # Status label
-        self.status_var = tk.StringVar(value="Ready")
-        self.status_label = ttk.Label(main_frame, textvariable=self.status_var, style="Status.TLabel")
-        self.status_label.grid(row=0, column=0, columnspan=2, pady=10)
+        # Logo
+        self.logo_label = ctk.CTkLabel(
+            self.main_frame,
+            text="SystemOS",
+            font=ctk.CTkFont(size=32, weight="bold")
+        )
+        self.logo_label.grid(row=0, column=0, pady=(20, 10))
+        
+        # Username entry
+        self.username_entry = ctk.CTkEntry(
+            self.main_frame,
+            placeholder_text="Username",
+            width=300
+        )
+        self.username_entry.grid(row=1, column=0, pady=(20, 10))
+        
+        # Password entry
+        self.password_entry = ctk.CTkEntry(
+            self.main_frame,
+            placeholder_text="Password",
+            show="•",
+            width=300
+        )
+        self.password_entry.grid(row=2, column=0, pady=(10, 20))
+        
+        # Login button
+        self.login_button = ctk.CTkButton(
+            self.main_frame,
+            text="Login",
+            command=self.perform_login,
+            width=300
+        )
+        self.login_button.grid(row=3, column=0, pady=10)
         
         # Progress bar
-        self.progress = ttk.Progressbar(main_frame, length=300, mode='determinate')
-        self.progress.grid(row=1, column=0, columnspan=2, pady=10)
+        self.progress_bar = ctk.CTkProgressBar(
+            self.main_frame,
+            width=300
+        )
+        self.progress_bar.grid(row=4, column=0, pady=(20, 10))
+        self.progress_bar.set(0)
+        
+        # Status message
+        self.status_label = ctk.CTkLabel(
+            self.main_frame,
+            text="Ready to login",
+            font=ctk.CTkFont(size=12)
+        )
+        self.status_label.grid(row=5, column=0, pady=10)
         
         # Log text area
-        self.log_text = tk.Text(main_frame, height=10, width=40)
-        self.log_text.grid(row=2, column=0, columnspan=2, pady=10)
-        
-        # Start button
-        self.start_button = ttk.Button(main_frame, text="Start Login", command=self.start_login)
-        self.start_button.grid(row=3, column=0, pady=10)
-        
-        # Minimize button
-        self.min_button = ttk.Button(main_frame, text="Minimize to Tray", command=self.minimize_to_tray)
-        self.min_button.grid(row=3, column=1, pady=10)
-        
-        # Handle window close
-        self.root.protocol('WM_DELETE_WINDOW', self.minimize_to_tray)
-        
-        self.is_running = False
-    
-    def create_tray_icon(self):
-        try:
-            icon = Image.open(resource_path("icon.ico"))
-        except:
-            icon = Image.new('RGB', (64, 64), color='blue')
-        self.icon = pystray.Icon("auto_login", icon, "Auto Login", self.create_tray_menu())
-    
-    def create_tray_menu(self):
-        return pystray.Menu(
-            pystray.MenuItem("Show", self.show_window),
-            pystray.MenuItem("Start Login", self.start_login),
-            pystray.MenuItem("Exit", self.quit_app)
+        self.log_text = ctk.CTkTextbox(
+            self.main_frame,
+            width=300,
+            height=100
         )
-    
+        self.log_text.grid(row=6, column=0, pady=10)
+        
+        # Load saved configuration
+        self.load_config()
+
     def log(self, message):
-        self.log_text.insert(tk.END, f"{message}\n")
-        self.log_text.see(tk.END)
-    
-    def update_status(self, message, progress=None):
-        self.status_var.set(message)
-        if progress is not None:
-            self.progress['value'] = progress
-    
-    def minimize_to_tray(self):
-        self.root.withdraw()
-        self.icon.run()
-    
-    def show_window(self):
-        self.icon.stop()
-        self.root.deiconify()
-    
-    def quit_app(self):
-        self.icon.stop()
-        self.root.quit()
-    
-    def setup_driver(self):
-        self.log("Setting up Chrome driver...")
-        chrome_options = Options()
-        chrome_options.add_argument("--start-maximized")
-        chrome_options.add_argument("--ignore-certificate-errors")
-        chrome_options.add_argument("--ignore-ssl-errors")
-        chrome_options.add_argument('--headless')  # Run in background
-        
+        """Add a message to the log text area"""
+        self.log_text.insert(tk.END, f"{time.strftime('%H:%M:%S')} - {message}\n")
+        self.log_text.see(tk.END)  # Scroll to the bottom
+        self.update()
+
+    def load_config(self):
+        """Load saved configuration from config.json"""
         try:
-            service = Service(resource_path("chromedriver.exe"))
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-            return driver
+            if os.path.exists('config.json'):
+                with open('config.json', 'r') as f:
+                    config = json.load(f)
+                    if 'username' in config:
+                        self.username_entry.insert(0, config['username'])
+                        self.log("Loaded saved username")
+            else:
+                self.log("No saved credentials found")
         except Exception as e:
-            self.log(f"Error setting up Chrome driver: {str(e)}")
-            return None
-    
+            self.log(f"Error loading config: {str(e)}")
+
+    def save_config(self):
+        """Save configuration to config.json"""
+        try:
+            config = {
+                'username': self.username_entry.get()
+            }
+            with open('config.json', 'w') as f:
+                json.dump(config, f)
+            self.log("Saved configuration")
+        except Exception as e:
+            self.log(f"Error saving config: {str(e)}")
+
+    def update_status(self, message, progress):
+        """Update the status label and progress bar"""
+        self.status_label.configure(text=message)
+        self.progress_bar.set(progress / 100)
+        self.log(message)
+        self.update()
+
     def perform_login(self):
-        if self.is_running:
-            return
-        
-        self.is_running = True
-        self.start_button.state(['disabled'])
+        # Disable login button
+        self.login_button.configure(state="disabled")
         
         try:
-            self.update_status("Starting login process...", 10)
-            driver = self.setup_driver()
-            if not driver:
-                return
+            self.update_status("Initializing browser...", 20)
+            driver = webdriver.Chrome()
             
-            self.update_status("Navigating to login page...", 30)
+            self.update_status("Navigating to login page...", 40)
             driver.get("https://192.168.1.9/userlogin/")
             
+            # Handle security warning
             try:
-                self.update_status("Handling security warning...", 40)
+                self.update_status("Handling security warning...", 50)
                 advanced_button = driver.find_element(By.ID, "details-button")
                 advanced_button.click()
                 proceed_link = driver.find_element(By.ID, "proceed-link")
                 proceed_link.click()
             except:
-                self.log("No security warning found.")
-            
+                pass
+
             self.update_status("Entering credentials...", 60)
             wait = WebDriverWait(driver, 10)
             username_field = wait.until(EC.presence_of_element_located((By.ID, "user")))
             username_field.clear()
-            username_field.send_keys("Yokesh-CSW")
+            username_field.send_keys(self.username_entry.get())
             
             password_field = driver.find_element(By.ID, "passwd")
             password_field.clear()
-            password_field.send_keys("Password@123")
+            password_field.send_keys(self.password_entry.get())
             
-            self.update_status("Clicking login button...", 80)
+            self.update_status("Logging in...", 80)
             submit_button = driver.find_element(By.ID, "submitbtn")
             submit_button.click()
             
-            self.update_status("Login completed!", 100)
-            self.log("Login successful!")
-            
+            self.update_status("Login successful!", 100)
+            self.save_config()  # Save the configuration after successful login
             time.sleep(2)
-            driver.quit()
             
         except Exception as e:
-            self.log(f"Error: {str(e)}")
-            self.update_status("Login failed!", 0)
+            self.update_status(f"Error: {str(e)}", 0)
         finally:
-            self.is_running = False
-            self.start_button.state(['!disabled'])
-    
-    def start_login(self):
-        threading.Thread(target=self.perform_login, daemon=True).start()
-    
-    def run(self):
-        # Start automatic login if it's a startup run
-        if getattr(sys, 'frozen', False) and len(sys.argv) > 1 and sys.argv[1] == "--startup":
-            self.start_login()
-            self.minimize_to_tray()
-        self.root.mainloop()
+            self.login_button.configure(state="normal")
+            driver.quit()
 
 if __name__ == "__main__":
-    app = AutoLoginGUI()
-    app.run() 
+    app = ModernLoginApp()
+    app.mainloop() 
