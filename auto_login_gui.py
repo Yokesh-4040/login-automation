@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import customtkinter as ctk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageOps
 import json
 import os
 import keyring
@@ -19,114 +19,187 @@ class ModernLoginApp(ctk.CTk):
             super().__init__()
             
             # Application constants
-            self.APP_NAME = "SystemOS"
-            self.KEYRING_SERVICE = "SystemOS_Login"
+            self.APP_NAME = "Simulanis Login"
+            self.KEYRING_SERVICE = "SimulanisLogin"
             
             # Configure the window
-            self.title("SystemOS Login")
-            self.geometry("400x300")  # Reduced height for compact view
+            self.title(self.APP_NAME)
+            self.geometry("500x700")  # Increased window size
+            self.minsize(700, 500)    # Set minimum window size
+            self.overrideredirect(True)  # Remove default titlebar
+            
+            # Center the window on screen
+            self.center_window()
+            
+            # Make window draggable
+            self.bind("<Button-1>", self.start_move)
+            self.bind("<ButtonRelease-1>", self.stop_move)
+            self.bind("<B1-Motion>", self.do_move)
             
             # Set the color theme
             ctk.set_appearance_mode("dark")
             ctk.set_default_color_theme("blue")
             
+            # Load branding assets
+            self.load_branding()
+            
             self.setup_gui()
+            
+            # Add close button
+            self.add_close_button()
         else:
-            self.APP_NAME = "SystemOS"
-            self.KEYRING_SERVICE = "SystemOS_Login"
+            self.APP_NAME = "Simulanis Login"
+            self.KEYRING_SERVICE = "SimulanisLogin"
             self.headless = True
             self.load_headless_config()
+
+    def center_window(self):
+        """Center the window on screen"""
+        self.update_idletasks()  # Update "requested size" from geometry manager
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f'{width}x{height}+{x}+{y}')
+
+    def load_branding(self):
+        """Load branding assets"""
+        try:
+            # Load and resize logo
+            logo_path = os.path.join("Logos", "Logo.png")
+            if os.path.exists(logo_path):
+                logo_img = Image.open(logo_path)
+                # Increased logo size
+                logo_img = ImageOps.contain(logo_img, (400, 200), Image.Resampling.LANCZOS)
+                self.logo_image = ImageTk.PhotoImage(logo_img)
+            else:
+                self.logo_image = None
+
+            # Set window icon
+            icon_path = os.path.join("Logos", "Icon-blue-transparent.png")
+            if os.path.exists(icon_path):
+                self.iconphoto(True, ImageTk.PhotoImage(Image.open(icon_path)))
+        except Exception as e:
+            print(f"Error loading branding assets: {str(e)}")
+            self.logo_image = None
 
     def setup_gui(self):
         # Configure grid
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         
-        # Create main frame
+        # Create main frame with padding
         self.main_frame = ctk.CTkFrame(self)
-        self.main_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        self.main_frame.grid(row=0, column=0, padx=30, pady=30, sticky="nsew")  # Increased padding
+        self.main_frame.grid_columnconfigure(0, weight=1)
         
         # Logo
-        self.logo_label = ctk.CTkLabel(
-            self.main_frame,
-            text="SystemOS",
-            font=ctk.CTkFont(size=32, weight="bold")
-        )
-        self.logo_label.grid(row=0, column=0, pady=(20, 10))
+        if self.logo_image:
+            self.logo_label = ctk.CTkLabel(
+                self.main_frame,
+                image=self.logo_image,
+                text=""
+            )
+        else:
+            self.logo_label = ctk.CTkLabel(
+                self.main_frame,
+                text="Simulanis Solutions",
+                font=ctk.CTkFont(size=36, weight="bold")  # Increased font size
+            )
+        self.logo_label.grid(row=0, column=0, pady=(20, 30), sticky="ew")  # Increased padding
         
         # Create credentials frame
         self.credentials_frame = ctk.CTkFrame(self.main_frame)
-        self.credentials_frame.grid(row=1, column=0, pady=10, sticky="ew")
+        self.credentials_frame.grid(row=1, column=0, sticky="ew", padx=20)  # Increased padding
+        self.credentials_frame.grid_columnconfigure(0, weight=1)
         
         # Username entry
         self.username_entry = ctk.CTkEntry(
             self.credentials_frame,
             placeholder_text="Username",
-            width=300
+            width=400,  # Increased width
+            height=40   # Increased height
         )
-        self.username_entry.grid(row=0, column=0, pady=(10, 5))
+        self.username_entry.grid(row=0, column=0, pady=(20, 10), padx=20)
         
         # Password entry
         self.password_entry = ctk.CTkEntry(
             self.credentials_frame,
             placeholder_text="Password",
             show="•",
-            width=300
+            width=400,  # Increased width
+            height=40   # Increased height
         )
-        self.password_entry.grid(row=1, column=0, pady=(5, 10))
+        self.password_entry.grid(row=1, column=0, pady=10, padx=20)
+        
+        # Checkboxes frame
+        self.checkbox_frame = ctk.CTkFrame(self.credentials_frame, fg_color="transparent")
+        self.checkbox_frame.grid(row=2, column=0, pady=10, sticky="w", padx=30)
         
         # Show password checkbox
         self.show_password_var = tk.BooleanVar()
         self.show_password_checkbox = ctk.CTkCheckBox(
-            self.credentials_frame,
+            self.checkbox_frame,
             text="Show password",
             variable=self.show_password_var,
-            command=self.toggle_password_visibility
+            command=self.toggle_password_visibility,
+            font=ctk.CTkFont(size=12)  # Adjusted font size
         )
-        self.show_password_checkbox.grid(row=2, column=0, pady=(0, 5))
+        self.show_password_checkbox.grid(row=0, column=0, pady=5, sticky="w")
         
         # Remember me checkbox
         self.remember_me_var = tk.BooleanVar()
         self.remember_me_checkbox = ctk.CTkCheckBox(
-            self.credentials_frame,
+            self.checkbox_frame,
             text="Remember me",
-            variable=self.remember_me_var
+            variable=self.remember_me_var,
+            font=ctk.CTkFont(size=12)  # Adjusted font size
         )
-        self.remember_me_checkbox.grid(row=3, column=0, pady=(0, 5))
+        self.remember_me_checkbox.grid(row=1, column=0, pady=5, sticky="w")
         
         # Auto-login checkbox
         self.auto_login_var = tk.BooleanVar()
         self.auto_login_checkbox = ctk.CTkCheckBox(
-            self.credentials_frame,
+            self.checkbox_frame,
             text="Auto-login on startup",
-            variable=self.auto_login_var
+            variable=self.auto_login_var,
+            font=ctk.CTkFont(size=12)  # Adjusted font size
         )
-        self.auto_login_checkbox.grid(row=4, column=0, pady=(0, 10))
+        self.auto_login_checkbox.grid(row=2, column=0, pady=5, sticky="w")
+        
+        # Button frame
+        self.button_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        self.button_frame.grid(row=2, column=0, pady=(30, 20), sticky="ew")
+        self.button_frame.grid_columnconfigure(0, weight=1)
         
         # Edit credentials button
         self.edit_button = ctk.CTkButton(
-            self.main_frame,
+            self.button_frame,
             text="Edit Credentials",
             command=self.toggle_credentials_view,
-            width=300
+            width=400,  # Increased width
+            height=40,  # Increased height
+            font=ctk.CTkFont(size=14)  # Adjusted font size
         )
-        self.edit_button.grid(row=2, column=0, pady=10)
+        self.edit_button.grid(row=0, column=0, pady=10)
         
         # Login button
         self.login_button = ctk.CTkButton(
-            self.main_frame,
+            self.button_frame,
             text="Login",
             command=self.perform_login,
-            width=300
+            width=400,  # Increased width
+            height=40,  # Increased height
+            font=ctk.CTkFont(size=14)  # Adjusted font size
         )
-        self.login_button.grid(row=3, column=0, pady=10)
+        self.login_button.grid(row=1, column=0, pady=10)
         
         # Progress bar
         self.progress_bar = ctk.CTkProgressBar(
             self.main_frame,
-            width=300
+            width=400  # Increased width
         )
-        self.progress_bar.grid(row=4, column=0, pady=(10, 5))
+        self.progress_bar.grid(row=3, column=0, pady=(20, 10))
         self.progress_bar.set(0)
         
         # Status message
@@ -135,7 +208,15 @@ class ModernLoginApp(ctk.CTk):
             text="Ready to login",
             font=ctk.CTkFont(size=12)
         )
-        self.status_label.grid(row=5, column=0, pady=5)
+        self.status_label.grid(row=4, column=0, pady=10)
+        
+        # Footer with company info
+        self.footer_label = ctk.CTkLabel(
+            self.main_frame,
+            text="© Simulanis Solutions Pvt. Ltd.",
+            font=ctk.CTkFont(size=11)
+        )
+        self.footer_label.grid(row=5, column=0, pady=(20, 0))
         
         # Bind Enter key to login
         self.bind('<Return>', lambda e: self.perform_login())
@@ -152,22 +233,24 @@ class ModernLoginApp(ctk.CTk):
         if self.credentials_frame.winfo_viewable():
             self.credentials_frame.grid_remove()
             self.edit_button.configure(text="Edit Credentials")
-            self.geometry("400x300")  # Compact view
+            self.geometry("500x400")  # Increased compact view size
         else:
             self.credentials_frame.grid()
             self.edit_button.configure(text="Hide Credentials")
-            self.geometry("400x650")  # Expanded view
+            self.geometry("500x700")  # Increased expanded view size
+        self.center_window()
 
     def update_credentials_view(self):
         """Update the credentials view based on saved state"""
         if self.username_entry.get() and self.get_saved_password():
             self.credentials_frame.grid_remove()
             self.edit_button.configure(text="Edit Credentials")
-            self.geometry("400x300")  # Compact view
+            self.geometry("500x400")  # Compact view
         else:
             self.credentials_frame.grid()
             self.edit_button.configure(text="Hide Credentials")
-            self.geometry("400x650")  # Expanded view
+            self.geometry("500x700")  # Expanded view
+        self.center_window()
 
     def load_headless_config(self):
         """Load headless mode configuration"""
@@ -371,6 +454,43 @@ class ModernLoginApp(ctk.CTk):
         except Exception as e:
             self.log(f"Error saving config: {str(e)}")
 
+    def add_close_button(self):
+        """Add a close button to the top-right corner"""
+        self.close_button = ctk.CTkButton(
+            self,
+            text="×",
+            width=40,
+            height=40,
+            command=self.quit,
+            font=ctk.CTkFont(size=20, weight="bold"),
+            fg_color="transparent",
+            hover_color="red",
+            corner_radius=0
+        )
+        self.close_button.place(x=self.winfo_width() - 40, y=0)
+        
+        # Update close button position when window is resized
+        self.bind("<Configure>", lambda e: self.close_button.place(x=self.winfo_width() - 40, y=0))
+
+    def start_move(self, event):
+        """Begin window drag"""
+        self._drag_start_x = event.x
+        self._drag_start_y = event.y
+
+    def stop_move(self, event):
+        """End window drag"""
+        self._drag_start_x = None
+        self._drag_start_y = None
+
+    def do_move(self, event):
+        """Handle window drag"""
+        if hasattr(self, '_drag_start_x') and self._drag_start_x is not None:
+            dx = event.x - self._drag_start_x
+            dy = event.y - self._drag_start_y
+            new_x = self.winfo_x() + dx
+            new_y = self.winfo_y() + dy
+            self.geometry(f"+{new_x}+{new_y}")
+
 if __name__ == "__main__":
     # Check for headless mode
     headless_mode = '--headless' in sys.argv
@@ -380,3 +500,4 @@ if __name__ == "__main__":
         app.mainloop()
     else:
         app.perform_login() 
+
