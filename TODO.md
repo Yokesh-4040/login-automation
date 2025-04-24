@@ -20,9 +20,9 @@
 - [x] Added Chrome driver auto-download
 
 ### Deployment
-- [x] Create installer package
-- [x] Set up build versioning
 - [x] Create separate build directory structure
+- [x] Set up build versioning
+- [x] Switch to direct builds without installer
 
 ## Pending Tasks 📝
 
@@ -59,4 +59,4 @@
 - The application is designed to automate the login process for Simulanis Solutions employees
 - Current focus is on improving reliability and user experience
 - Security features need to be prioritized before wide deployment
-- Build v1.0.1 is ready for testing with fixes for installation issues 
+- Build v1.0.1 is ready for testing with direct build process 

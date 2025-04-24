@@ -25,6 +25,11 @@ A modern, secure desktop application for automated login to Simulanis network se
    ```bash
    pip install -r requirements.txt
    ```
+3. Run the build script to create the executable:
+   ```bash
+   python build.py
+   ```
+4. The built application will be available in the `dist` directory
 
 ## Usage
 
