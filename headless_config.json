@@ -1,0 +1,12 @@
+{
+    "headless": true,
+    "chrome_options": [
+        "--headless",
+        "--disable-gpu",
+        "--no-sandbox",
+        "--disable-dev-shm-usage"
+    ],
+    "auto_login": true,
+    "retry_interval": 60,
+    "max_retries": 3
+} 
