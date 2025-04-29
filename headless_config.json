@@ -4,9 +4,11 @@
         "--headless",
         "--disable-gpu",
         "--no-sandbox",
-        "--disable-dev-shm-usage"
+        "--disable-dev-shm-usage",
+        "--disable-software-rasterizer"
     ],
     "auto_login": true,
     "retry_interval": 60,
-    "max_retries": 3
+    "max_retries": 3,
+    "log_file": "simulanis_login.log"
 } 

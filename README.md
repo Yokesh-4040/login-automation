@@ -1,40 +1,43 @@
-# Simulanis Auto Login v1.0.0
+# Simulanis Auto Login Application
 
-A modern, secure desktop application for automated login to Simulanis network services.
+A modern GUI application for automated login to Simulanis platform with secure credential management.
+
+## Version
+Current Version: 1.1.0
 
 ## Features
 
-- 🔒 Secure credential management using system keyring
-- 🎨 Modern, responsive UI with dark mode support
-- 🤖 Headless mode for automated login
-- 🔄 Auto-login capability on startup
-- 🎯 Remember me functionality
-- 🛡️ SSL certificate handling
-- 📱 Responsive and draggable window
-
-## Requirements
-
-- Python 3.7+
-- Chrome browser installed
-- Required Python packages (see requirements.txt)
+- Modern, customizable GUI using CustomTkinter
+- Secure credential storage using keyring
+- Headless mode support for automated login
+- Remember me and auto-login functionality
+- Certificate handling for HTTPS connections
+- Configurable retry mechanism for connection failures
+- Version-specific builds with proper asset management
 
 ## Installation
 
-1. Clone the repository or download the latest release
-2. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Run the build script to create the executable:
-   ```bash
-   python build.py
-   ```
-4. The built application will be available in the `dist` directory
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd simulanis-login
+```
+
+2. Create a virtual environment (recommended):
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
 ## Usage
 
 ### GUI Mode
-Run the application in normal mode:
+Run the application in GUI mode:
 ```bash
 python auto_login_gui.py
 ```
@@ -45,15 +48,38 @@ Run the application in headless mode:
 python auto_login_gui.py --headless
 ```
 
+## Building
+
+### Standard Build
+To create a standard build:
+```bash
+python build.py
+```
+This will create a version-specific build in `Desktop/Auto-Login-Build/v{version}`.
+
+### Build Output
+The build process will create:
+- Executable file (SimulanisLogin.exe)
+- Required assets (Icons, Logos)
+- Configuration files
+- Documentation
+- Changelog
+
+### Build Configuration
+- Version-specific folders
+- Automatic asset management
+- Optional custom icon support
+- Clean build process with proper error handling
+
 ## Configuration
 
 ### GUI Configuration
-- **Remember Me**: Securely saves credentials for future use
-- **Auto-login**: Automatically logs in on application startup
-- **Headless Mode**: Runs Chrome in headless mode (no browser window)
+- Remember Me: Securely saves credentials for future use
+- Auto-login: Automatically logs in on application startup
+- Headless Mode: Runs Chrome in headless mode (no visible browser window)
 
 ### Headless Configuration
-Edit `headless_config.json` to customize headless mode:
+Create a `headless_config.json` file:
 ```json
 {
     "chrome_options": ["--headless", "--disable-gpu"],
@@ -63,44 +89,48 @@ Edit `headless_config.json` to customize headless mode:
 }
 ```
 
-## Security Features
-
-- Credentials are stored securely using the system keyring
-- No plaintext password storage
-- SSL certificate handling
-- Secure password visibility toggle
-
 ## Directory Structure
-
 ```
-.
+simulanis-login/
 ├── auto_login_gui.py    # Main application file
-├── requirements.txt     # Python dependencies
-├── headless_config.json # Headless mode configuration
-├── config.json         # User preferences
+├── build.py            # Build script
+├── requirements.txt    # Python dependencies
+├── README.md          # Documentation
+├── CHANGELOG.md       # Version history
+├── config.json        # User configuration
 ├── Icons/             # Application icons
-└── Logos/             # Branding assets
+└── Logos/             # Brand assets
 ```
+
+## Security
+
+- Credentials are securely stored using the system keyring
+- HTTPS certificate handling
+- No plaintext password storage
+
+## Development
+
+### Prerequisites
+- Python 3.8+
+- Chrome/Chromium browser
+- Chrome WebDriver
+
+### Building from Source
+To create an executable:
+```bash
+python build.py
+```
+
+The build will be created in: `Desktop/Auto-Login-Build/v{version}/`
 
 ## Version History
 
-### v1.0.1
-- Fixed installation issues
-- Improved error handling
-- Updated installer package
-- Enhanced build process
-- Added proper branding assets
-
-### v1.0.0
-- Initial release
-- Modern UI with customtkinter
-- Secure credential management
-- Headless mode support
-- Auto-login functionality
-- Remember me feature
-- SSL certificate handling
-- Draggable window interface
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ## License
 
-© Simulanis Solutions Pvt. Ltd. All rights reserved. 
+[Your License Here]
+
+## Support
+
+For support, please contact [Your Contact Information] 

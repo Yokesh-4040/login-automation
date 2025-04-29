@@ -335,18 +335,23 @@ class ModernLoginApp(ctk.CTk):
 
     def update_status(self, message, progress=None):
         """Update status message and progress bar"""
-        self.status_label.configure(text=message)
+        # Always log the status message
+        self.log(message)
         
-        if progress is not None:
-            if progress > 0:
-                self.progress_bar.grid()  # Show progress bar
-                self.progress_bar.set(progress / 100)
+        # Only update GUI elements if not in headless mode
+        if not hasattr(self, 'headless') or not self.headless:
+            self.status_label.configure(text=message)
+            
+            if progress is not None:
+                if progress > 0:
+                    self.progress_bar.grid()  # Show progress bar
+                    self.progress_bar.set(progress / 100)
+                else:
+                    self.progress_bar.grid_remove()  # Hide progress bar
             else:
-                self.progress_bar.grid_remove()  # Hide progress bar
-        else:
-            self.progress_bar.grid_remove()  # Hide progress bar when no progress specified
-        
-        self.update()
+                self.progress_bar.grid_remove()  # Hide progress bar when no progress specified
+            
+            self.update()
 
     def toggle_password_visibility(self):
         """Toggle password visibility"""
@@ -390,15 +395,16 @@ class ModernLoginApp(ctk.CTk):
 
     def console_log(self, message):
         """Log message to console in headless mode"""
-        timestamp = time.strftime('%H:%M:%S')
-        print(f"{timestamp} - {message}")
+        timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+        print(f"[{timestamp}] {message}")
 
     def log(self, message):
         """Add a message to the log text area or console"""
         if hasattr(self, 'headless') and self.headless:
             self.console_log(message)
         else:
-            print(f"{time.strftime('%H:%M:%S')} - {message}")
+            timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+            print(f"[{timestamp}] {message}")
 
     def start_login_animation(self):
         """Start the login animation sequence"""
@@ -414,7 +420,7 @@ class ModernLoginApp(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         
-        # Show right panel
+        # Show right panel without changing status
         self.right_panel.grid()
 
     def perform_login(self):
@@ -486,20 +492,54 @@ class ModernLoginApp(ctk.CTk):
             submit_button = driver.find_element(By.ID, "submitbtn")
             submit_button.click()
             
-            # Check for login errors
-            try:
-                error_element = driver.find_element(By.CLASS_NAME, "error-message")
-                if error_element.is_displayed():
-                    raise ValueError(f"Login failed: {error_element.text}")
-            except:
-                pass  # No error message found, continue
+            # Wait for page load after submission
+            time.sleep(2)  # Give time for any redirects to happen
             
-            self.update_status("Successfully connected to network!", 100)
-            if not hasattr(self, 'headless') or not self.headless:
-                self.save_config()
-                if self.remember_me_var.get():
-                    self.username_entry.delete(0, 'end')
-                    self.username_entry.insert(0, username)
+            # Check current URL for userSense redirect pattern
+            if "192.168.1.9/userSense" in driver.current_url:
+                # Wait to see if it redirects back to login
+                time.sleep(2)
+                if self.TARGET_URL in driver.current_url:
+                    raise ValueError("Login failed: Redirected back to login page")
+            
+            # Check for specific error messages on the page
+            try:
+                # Look for authentication failure message
+                auth_fail_msg = f"Authentication Failed for user:{username}"
+                page_source = driver.page_source
+                if auth_fail_msg in page_source:
+                    raise ValueError("Login failed: Invalid credentials")
+                
+                # Look for already logged in message
+                already_logged_msg = "User is already logged in with same ip"
+                if already_logged_msg in page_source:
+                    self.update_status("User is already logged in from this IP address")
+                    # Save config since credentials are correct
+                    if not hasattr(self, 'headless') or not self.headless:
+                        self.save_config()
+                        if self.remember_me_var.get():
+                            self.username_entry.delete(0, 'end')
+                            self.username_entry.insert(0, username)
+                    return  # Exit without raising error since this is a valid state
+                
+                # Check for successful login by verifying redirect to simulanis.com
+                if "simulanis.com" in driver.current_url:
+                    self.update_status("Successfully logged in!", 100)
+                    if not hasattr(self, 'headless') or not self.headless:
+                        self.save_config()
+                        if self.remember_me_var.get():
+                            self.username_entry.delete(0, 'end')
+                            self.username_entry.insert(0, username)
+                else:
+                    raise ValueError("Login failed: Please check internet connection and Credentials")
+                
+            except ValueError as ve:
+                raise ve
+            except Exception as e:
+                # If we can't find any specific messages but we're still on login page
+                if self.TARGET_URL in driver.current_url:
+                    raise ValueError("Login failed: Still on login page")
+                
             time.sleep(2)
             
         except ValueError as ve:
@@ -518,7 +558,6 @@ class ModernLoginApp(ctk.CTk):
             if not hasattr(self, 'headless') or not self.headless:
                 self.login_button.configure(state="normal")
                 self.stop_login_animation()
-                self.update_status("Ready to connect")  # Reset status
             try:
                 driver.quit()
             except:
