@@ -1,93 +1,87 @@
-# Simulanis Auto Login Application
+# Simulanis Login Automation
 
-A modern GUI application for automated login to Simulanis platform with secure credential management.
-
-## Version
-Current Version: 1.1.0
+Automated login tool for Simulanis portal with two user interfaces: Mini and Full.
 
 ## Features
 
-- Modern, customizable GUI using CustomTkinter
-- Secure credential storage using keyring
-- Headless mode support for automated login
-- Remember me and auto-login functionality
-- Certificate handling for HTTPS connections
-- Configurable retry mechanism for connection failures
-- Version-specific builds with proper asset management
+- **Two User Interfaces**:
+  - **Mini UI**: Compact interface that sits in the top-right corner for quick connect/disconnect
+  - **Full UI**: Advanced interface with detailed settings and configuration
+- **Automatic Login**: Remembers credentials and can automatically log in on startup
+- **Secure Credential Storage**: Credentials are securely stored using the system keyring
+- **Headless Mode**: Run in the background without a visible browser
+- **Status Updates**: Clear status messages during the login process
 
-## Installation
+## Getting Started
 
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd simulanis-login
+### Installation
+
+1. Download the latest release
+2. Extract all files to a folder of your choice
+3. Run one of the startup batch files to launch the application
+
+### Startup Options
+
+Several batch files are provided for different launch options:
+
+- **Start Simulanis Login (GUI).bat** - Starts the Mini UI (default)
+- **Start Simulanis Login (Full UI).bat** - Starts the Full UI with all settings visible
+- **Start Simulanis Login.bat** - Starts in headless mode (no UI, background operation)
+
+You can also use the main launcher script directly with options:
+
 ```
-
-2. Create a virtual environment (recommended):
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
+python simulanis_login.py [--mini] [--full] [--headless]
 ```
 
 ## Usage
 
-### GUI Mode
-Run the application in GUI mode:
-```bash
-python auto_login_gui.py
-```
+### Mini UI
 
-### Headless Mode
-Run the application in headless mode:
-```bash
-python auto_login_gui.py --headless
-```
+The Mini UI provides:
+- Status indicator showing current connection state
+- Connect/Disconnect button for quick login management
+- Settings button (gear icon) to open the Full UI for advanced configuration
+- Close button (X) to exit the application
 
-## Building
+When credentials are needed, a small dialog will appear to enter username and password.
 
-### Standard Build
-To create a standard build:
-```bash
-python build.py
-```
-This will create a version-specific build in `Desktop/Auto-Login-Build/v{version}`.
+### Full UI
 
-### Build Output
-The build process will create:
-- Executable file (SimulanisLogin.exe)
-- Required assets (Icons, Logos)
-- Configuration files
-- Documentation
-- Changelog
-
-### Build Configuration
-- Version-specific folders
-- Automatic asset management
-- Optional custom icon support
-- Clean build process with proper error handling
+The Full UI provides:
+- Detailed status information
+- Username and password fields
+- Remember me and auto-login options
+- Headless mode toggle
+- "Switch to Mini UI" button to change to the compact interface
 
 ## Configuration
 
-### GUI Configuration
-- Remember Me: Securely saves credentials for future use
-- Auto-login: Automatically logs in on application startup
-- Headless Mode: Runs Chrome in headless mode (no visible browser window)
+Settings are automatically saved to `config.json` and shared between both interfaces. Changes made in either UI will be reflected in the other.
 
-### Headless Configuration
-Create a `headless_config.json` file:
-```json
-{
-    "chrome_options": ["--headless", "--disable-gpu"],
-    "auto_login": true,
-    "retry_interval": 60,
-    "max_retries": 3
-}
-```
+### Options
+
+- **Remember Me**: Save credentials securely for future logins
+- **Auto-login on startup**: Automatically log in when the application starts
+- **Headless Mode**: Run the browser hidden in the background
+
+## Troubleshooting
+
+- **Login Issues**: Check your network connection and credentials
+- **UI Problems**: Try using the other interface or restart the application
+- **Configuration Issues**: Delete the config.json file to reset to defaults
+
+## Development
+
+The application consists of:
+- `mini_login_gui.py` - Compact user interface
+- `auto_login_gui.py` - Full-featured user interface
+- `login_core.py` - Core login functionality
+- `dialogs.py` - Shared dialog components
+- `simulanis_login.py` - Main launcher script
+
+## Version
+Current Version: 1.1.0
 
 ## Directory Structure
 ```

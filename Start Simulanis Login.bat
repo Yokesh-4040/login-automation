@@ -1,2 +1,3 @@
 @echo off
-start "" "Simulanis Auto Login.exe" --headless 
+echo Starting Simulanis Login...
+start "" "SimulanisLogin.exe" --mini 

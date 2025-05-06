@@ -1,0 +1,3 @@
+@echo off
+echo Starting Simulanis Login (Full UI)...
+start "" "SimulanisLogin.exe" --full 

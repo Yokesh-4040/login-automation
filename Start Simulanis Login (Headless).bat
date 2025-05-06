@@ -1,0 +1,3 @@
+@echo off
+echo Starting Simulanis Login (Headless)...
+start "" "SimulanisLogin.exe" --headless 

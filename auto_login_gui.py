@@ -15,11 +15,23 @@ import sys
 from pathlib import Path
 import requests
 import math
+import subprocess
+import tkinter.messagebox as messagebox
+import win32gui
+import win32api
+import win32con
+import ctypes
 
 class ModernLoginApp(ctk.CTk):
     def __init__(self, headless=False):
         if not headless:
             super().__init__()
+            
+            # Determine if launched from mini UI
+            self.from_mini_ui = "--from-mini" in sys.argv
+            
+            # Determine if credentials are needed
+            self.needs_credentials = "--needs-credentials" in sys.argv
             
             # Application constants
             self.APP_NAME = "Simulanis Login"
@@ -68,11 +80,18 @@ class ModernLoginApp(ctk.CTk):
             self.bind("<ButtonRelease-1>", self.stop_move)
             self.bind("<B1-Motion>", self.do_move)
             
+            # Bind window closing event to our custom handler
+            self.protocol("WM_DELETE_WINDOW", self.on_close)
+            
             # Load saved configuration
             self.load_config()
             
-            # Check for auto-login
-            if self.auto_login_var.get() and self.get_saved_username() and self.get_saved_password():
+            # If needs_credentials flag is set, focus on username field
+            if self.needs_credentials:
+                self.username_entry.focus_set()
+                self.update_status("Please enter your login credentials", 0)
+            # Check for auto-login, but only if not launched from mini UI and not needing credentials
+            elif not self.from_mini_ui and self.auto_login_var.get() and self.get_saved_username() and self.get_saved_password():
                 self.after(1000, self.perform_login)
         else:
             self.APP_NAME = "Simulanis Login"
@@ -192,6 +211,14 @@ class ModernLoginApp(ctk.CTk):
         self.status_frame.grid_columnconfigure(0, weight=1)
         
         # Status message
+        if hasattr(self, 'from_mini_ui') and self.from_mini_ui:
+            self.status_label = ctk.CTkLabel(
+                self.status_frame,
+                text="India's most awarded XR Company",
+                font=ctk.CTkFont(size=13),
+                text_color=("gray50", "gray70")
+            )
+        else:
         self.status_label = ctk.CTkLabel(
             self.status_frame,
             text="Ready to connect",
@@ -315,9 +342,6 @@ class ModernLoginApp(ctk.CTk):
         # Progress bar (initially hidden)
         self.progress_bar.grid_remove()
         
-        # Status message (initially showing ready state)
-        self.status_label.configure(text="Ready to connect")
-        
         # Login button
         self.login_button = ctk.CTkButton(
             self.login_frame,
@@ -329,6 +353,20 @@ class ModernLoginApp(ctk.CTk):
             font=ctk.CTkFont(size=14, weight="bold")
         )
         self.login_button.grid(row=4, column=0, pady=20, padx=20)
+        
+        # Switch to Mini UI button
+        self.mini_ui_button = ctk.CTkButton(
+            self.login_frame,
+            text="Switch to Mini UI",
+            command=self.switch_to_mini_ui,
+            width=300,
+            height=30,
+            corner_radius=8,
+            fg_color=("gray75", "gray40"),
+            hover_color=("gray65", "gray30"),
+            font=ctk.CTkFont(size=12)
+        )
+        self.mini_ui_button.grid(row=5, column=0, pady=(5, 20), padx=20)
         
         # Bind Enter key to login
         self.bind('<Return>', lambda e: self.perform_login())
@@ -530,6 +568,8 @@ class ModernLoginApp(ctk.CTk):
                         if self.remember_me_var.get():
                             self.username_entry.delete(0, 'end')
                             self.username_entry.insert(0, username)
+                        # Minimize the window after successful login
+                        self.iconify()  # Minimize the main window
                 else:
                     raise ValueError("Login failed: Please check internet connection and Credentials")
                 
@@ -657,10 +697,10 @@ class ModernLoginApp(ctk.CTk):
         """Add a close button to the top-right corner"""
         self.close_button = ctk.CTkButton(
             self,
-            text="×",
+            text="-",
             width=40,
             height=40,
-            command=self.quit,
+            command=self.on_close,
             font=ctk.CTkFont(size=20, weight="bold"),
             fg_color="transparent",
             hover_color="#FF4444",
@@ -710,6 +750,108 @@ class ModernLoginApp(ctk.CTk):
         # If auto-login is enabled and we have credentials, start login process
         if self.auto_login_var.get() and self.username_entry.get() and self.password_entry.get():
             self.after(1000, self.perform_login)  # Start login after a short delay
+
+    def switch_to_mini_ui(self):
+        """Switch back to the Mini UI"""
+        try:
+            print("Switching to mini UI")
+            # Get the path to mini_login_gui.py
+            if getattr(sys, 'frozen', False):
+                # If running as a bundle (frozen)
+                app_dir = os.path.dirname(sys.executable)
+                mini_ui_path = os.path.join(app_dir, "mini_login_gui.py")
+            else:
+                # If running as a script
+                app_dir = os.path.dirname(os.path.abspath(__file__))
+                mini_ui_path = os.path.join(app_dir, "mini_login_gui.py")
+
+            # Save any pending configuration changes before switching
+            self.save_config()
+            
+            # First try to restore any existing Mini UI
+            if self.from_mini_ui:
+                try:
+                    from mini_login_gui import MiniLoginApp
+                    print("Using MiniLoginApp.restore_any_mini_ui method")
+                    if MiniLoginApp.restore_any_mini_ui():
+                        print("Successfully restored existing Mini UI")
+                        self.after(500, self.destroy)
+                        return
+                    print("No existing Mini UI found, will launch new instance")
+                except Exception as e:
+                    print(f"Couldn't use MiniLoginApp.restore_any_mini_ui: {str(e)}")
+            
+            # We get here if from_mini_ui is False or restore failed
+            # Check if the file exists
+            if not os.path.exists(mini_ui_path):
+                print(f"Error: Mini UI path not found at {mini_ui_path}")
+                # Try looking in current directory
+                mini_ui_path = os.path.join(os.getcwd(), "mini_login_gui.py")
+                if not os.path.exists(mini_ui_path):
+                    print("Mini UI not found in current directory either")
+                    return
+                
+            # Launch new instance of mini UI
+            print(f"Launching new Mini UI from: {mini_ui_path}")
+            if sys.platform == 'win32':
+                subprocess.Popen([sys.executable, mini_ui_path])
+            else:
+                subprocess.Popen([sys.executable, mini_ui_path])
+            
+            # Close ourselves after a short delay
+            self.after(500, self.destroy)
+                
+        except Exception as e:
+            print(f"Error switching to Mini UI: {str(e)}")
+            # Show an error message to the user
+            messagebox.showerror("Error", f"Could not launch Mini UI: {str(e)}")
+
+    def on_close(self):
+        """Handle window closing event"""
+        # Try to save any pending config changes
+        try:
+            self.save_config()
+        except Exception as e:
+            print(f"Error saving config during close: {str(e)}")
+            
+        # If launched from mini UI, restore it
+        if self.from_mini_ui:
+            print("Attempting to restore mini UI...")
+            
+            # Rather than try complex window restoration, launch a new mini UI
+            # since it's more reliable (the existing one might be in a weird state)
+            if sys.platform == 'win32':
+                try:
+                    # Get path to mini_login_gui.py
+                    if getattr(sys, 'frozen', False):
+                        app_dir = os.path.dirname(sys.executable)
+                        mini_ui_path = os.path.join(app_dir, "mini_login_gui.py")
+                    else:
+                        app_dir = os.path.dirname(os.path.abspath(__file__))
+                        mini_ui_path = os.path.join(app_dir, "mini_login_gui.py")
+                    
+                    # If file exists, launch it
+                    if os.path.exists(mini_ui_path):
+                        print(f"Launching mini UI from {mini_ui_path}")
+                        python_exe = sys.executable
+                        subprocess.Popen([python_exe, mini_ui_path])
+                    else:
+                        print(f"Mini UI not found at {mini_ui_path}")
+                except Exception as e:
+                    print(f"Error launching mini UI: {str(e)}")
+            else:
+                # For other platforms
+                try:
+                    app_dir = os.path.dirname(os.path.abspath(__file__))
+                    mini_ui_path = os.path.join(app_dir, "mini_login_gui.py")
+                    if os.path.exists(mini_ui_path):
+                        subprocess.Popen([sys.executable, mini_ui_path])
+                except Exception as e:
+                    print(f"Error launching mini UI: {str(e)}")
+        
+        print("Closing auto login window")
+        # Destroy this window
+        self.after(500, self.destroy)
 
 if __name__ == "__main__":
     # Check for headless mode
